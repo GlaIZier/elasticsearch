@@ -1,0 +1,23 @@
+[
+{
+'repeat(63)':
+  {
+    num: "{{index() + 1}}",
+    text: function (tags, parent) {
+      return "text" + this.num;
+    },
+    p: function (tags, parent) {
+      var p = Math.floor(this.num / 2);	
+      return (p === 0) ? null : p;
+    },
+    c: function (tags, parent) {
+      var c1 = this.num * 2;
+      var c2 = this.num * 2 + 1;
+      return [
+        (c1 > 63) ? null : c1, 
+        (c2 > 63) ? null : c2
+      ];
+    }
+  }
+}
+]

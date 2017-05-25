@@ -1,0 +1,86 @@
+-- create index
+curl -XPUT 'localhost:9200/tree' -d '{
+	"settings" : {
+		"index" : {
+			"analysis" : {
+				"analyzer" : {
+					"path_analyzer" : { "tokenizer" : "path_hierarchy" }
+				}
+			}
+		}
+	},
+	"mappings" : {
+		"bst" : {
+			"properties" : {
+				"bst" : {
+					"type" : "string",
+					"fields" : {
+						"name" : { 
+							"type" : "string",
+							"index" : "not_analyzed" 
+						},
+						"path" : { 
+							"type" : "string",
+							"analyzer" : "path_analyzer",
+							"store" : true 
+						}
+					}
+				}
+			}
+		}
+	}
+}'
+
+-- upload batch
+curl -XPOST 'localhost:9200/tree/bst/_bulk?pretty&refresh' --data-binary "@bst.json"
+
+-- get indeces
+curl -XGET 'localhost:9200/_cat/indices?v&pretty'
+
+-- get all mappings
+curl -XGET 'http://localhost:9200/_mapping?pretty=true'
+
+-- all nodes that have /4 node inside
+curl -XGET 'localhost:9200/tree/_search?pretty' -H 'Content-Type: application/json' -d'
+{
+  "query": { "match": {"path": "/4" } }
+}
+'
+
+curl -XGET 'localhost:9200/tree/_search?pretty' -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} }
+}
+'
+
+curl -XGET 'localhost:9200/tree/_search?pretty' -H 'Content-Type: application/json' -d'
+{
+	"filter": {
+		"term" : { "bst.path" : "/4" }
+	}
+}
+'
+
+
+curl -XGET 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d'
+{
+    "query": {
+    	"term" : { "bst.path" : "/4"}
+    }
+}
+'
+curl -XGET 'localhost:9200/tree/_analyze?field=bst.path&pretty' -d'/4/8/16'
+
+-- Don't know why this query doesn't work
+curl -XGET 'localhost:9200/tree/_search?pretty' -H 'Content-Type: application/json' -d'
+{
+  "query": { "prefix": {"path": "/1/2/4" } }
+}
+'
+
+-- Result query to find all children of a given node!
+curl -XGET 'localhost:9200/tree/_search?pretty' -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_phrase_prefix": {"path": "/1/2/4/8/16/32/64/128/256/512/1024/2048/4096" } }
+}
+'
